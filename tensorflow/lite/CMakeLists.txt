@@ -67,6 +67,7 @@ set(TENSORFLOW_LITE_GTEST_DIR "${TENSORFLOW_LITE_ROOT_DIR}/../../../googletest/g
 set(TENSORFLOW_LITE_ABSEIL_DIR "${TENSORFLOW_LITE_ROOT_DIR}/../../../abseil-cpp")
 
 set(GTEST_LIB_DIR "${TENSORFLOW_LITE_ROOT_DIR}/../../../googletest/lib/Debug")
+set(FLATBUFFERS_LIB_DIR "${TENSORFLOW_LITE_ROOT_DIR}/../../../flatbuffers/Debug")
 
  if (WIN32)
     set(PLATFORM_ENV_TIME_SRC ${TENSORFLOW_ROOT_DIR}/tensorflow/core/platform/windows/env_time.cc)
@@ -222,6 +223,7 @@ add_definitions(
     ${TENSORFLOW_LITE_ROOT_DIR}/model.cc
     ${TENSORFLOW_LITE_ROOT_DIR}/util.cc
     ${TENSORFLOW_LITE_ROOT_DIR}/tflite_osal.cc
+    ${TENSORFLOW_LITE_ROOT_DIR}/fft4g.c
     ${TENSORFLOW_LITE_ROOT_DIR}/mmap_allocation_disabled.cc
     ${TENSORFLOW_LITE_ROOT_DIR}/mutable_op_resolver.cc
     ${TENSORFLOW_LITE_ROOT_DIR}/nnapi/nnapi_implementation_disabled.cc
@@ -258,7 +260,7 @@ add_definitions(
   foreach (TEST_SRC_FILE ${TEST_SRC_FILES})
       string(REPLACE ".cc" "" TEST_NAME ${TEST_SRC_FILE})
       add_executable(${TEST_NAME} ${test_directory}/${TEST_SRC_FILE} )
-      target_link_libraries(${TEST_NAME} debug tensorflow-lite ${GTEST_LIB_DIR}/gtestd.lib ${GTEST_LIB_DIR}/gmockd.lib tensorflow-lite_test_util)
+      target_link_libraries(${TEST_NAME} debug tensorflow-lite ${GTEST_LIB_DIR}/gtestd.lib ${GTEST_LIB_DIR}/gmockd.lib ${FLATBUFFERS_LIB_DIR}/flatbuffers.lib tensorflow-lite_test_util)
       #target_link_libraries(${TEST_NAME} optimized tensorflow-lite ${GTEST_LIB_DIR}/gtest.lib ${GTEST_LIB_DIR}/gmock.lib tensorflow-lite_test_util)
   endforeach()
 
