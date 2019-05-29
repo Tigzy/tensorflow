@@ -38,6 +38,12 @@ ErrorReporter* ValidateErrorReporter(ErrorReporter* e) {
 
 const char* kEmptyTensorName = "";
 
+#ifdef _WIN32
+static const bool use_nnapi = false;
+#else
+static const bool use_nnapi = true;
+#endif
+
 // Normally we'd use ABSL_HAVE_ATTRIBUTE_WEAK and ABSL_ATTRIBUTE_WEAK, but
 // we avoid the absl dependency for binary size reasons.
 #ifdef __has_attribute
@@ -79,7 +85,7 @@ std::unique_ptr<FlatBufferModel> FlatBufferModel::BuildFromFile(
 
   std::unique_ptr<FlatBufferModel> model;
   auto allocation = GetAllocationFromFile(filename, /*mmap_file=*/true,
-                                          error_reporter, /*use_nnapi=*/true);
+                                          error_reporter, /*use_nnapi=*/use_nnapi);
   model.reset(new FlatBufferModel(std::move(allocation), error_reporter));
   if (!model->initialized()) model.reset();
   return model;

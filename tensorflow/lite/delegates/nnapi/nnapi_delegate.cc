@@ -455,7 +455,7 @@ class NNAPIOpBuilder {
     const TfLiteTensor* tensor = &context_->tensors[tensor_index];
     TF_LITE_ENSURE_EQ(context_, NumElements(tensor), 1);
 
-    ANeuralNetworksOperandType operand_type{.type = nn_type};
+    ANeuralNetworksOperandType operand_type; operand_type.type = nn_type;
     RETURN_TFLITE_ERROR_IF_NN_ERROR(
         context_,
         nnapi_->ANeuralNetworksModel_addOperand(nn_model_, &operand_type));
@@ -501,7 +501,8 @@ class NNAPIOpBuilder {
 
   template <typename T>
   TfLiteStatus AddScalarOperand(T value, int32_t nn_type) {
-    ANeuralNetworksOperandType operand_type{.type = nn_type};
+    ANeuralNetworksOperandType operand_type;
+    operand_type.type = nn_type;
     RETURN_TFLITE_ERROR_IF_NN_ERROR(
         context_,
         nnapi_->ANeuralNetworksModel_addOperand(nn_model_, &operand_type));
@@ -516,8 +517,10 @@ class NNAPIOpBuilder {
   template <typename T>
   TfLiteStatus AddVectorOperand(const T* values, uint32_t num_values,
                                 int32_t nn_type) {
-    ANeuralNetworksOperandType operand_type{
-        .type = nn_type, .dimensionCount = 1, .dimensions = &num_values};
+    ANeuralNetworksOperandType operand_type;
+    operand_type.type = nn_type;
+    operand_type.dimensionCount = 1;
+    operand_type.dimensions = &num_values;
 
     RETURN_TFLITE_ERROR_IF_NN_ERROR(
         context_,
@@ -534,11 +537,11 @@ class NNAPIOpBuilder {
   TfLiteStatus AddFloat32OutputTensor(uint32_t dimension_count,
                                       const uint32_t* dimension_data,
                                       int* ann_index_out) {
-    ANeuralNetworksOperandType operand_type{
-        .type = ANEURALNETWORKS_TENSOR_FLOAT32,
-        .dimensionCount = dimension_count,
-        .dimensions = dimension_data,
-    };
+    ANeuralNetworksOperandType operand_type;
+    operand_type.type = ANEURALNETWORKS_TENSOR_FLOAT32;
+    operand_type.dimensionCount = dimension_count;
+    operand_type.dimensions = dimension_data;
+    
     RETURN_TFLITE_ERROR_IF_NN_ERROR(
         context_,
         nnapi_->ANeuralNetworksModel_addOperand(nn_model_, &operand_type));
@@ -1788,8 +1791,8 @@ class NNAPIDelegateKernel {
 
 StatefulNnApiDelegate::StatefulNnApiDelegate(Options options)
     : TfLiteDelegate(TfLiteDelegateCreate()),
-      delegate_data_(
-          Data{.execution_preference = options.execution_preference}) {
+      delegate_data_(Data()) {
+  delegate_data_.execution_preference = options.execution_preference;
   if (options.accelerator_name) {
     delegate_data_.accelerator_name = options.accelerator_name;
   }
@@ -1887,37 +1890,37 @@ TfLiteStatus StatefulNnApiDelegate::DoPrepare(TfLiteContext* context,
 
   // NN API Delegate Registration (the pseudo kernel that will invoke NN
   // API node sub sets)
-  static const TfLiteRegistration nnapi_delegate_kernel = {
-      .init = [](TfLiteContext* context, const char* buffer,
-                 size_t length) -> void* {
-        const TfLiteDelegateParams* params =
-            reinterpret_cast<const TfLiteDelegateParams*>(buffer);
-        NNAPIDelegateKernel* kernel_state = new NNAPIDelegateKernel;
-        kernel_state->Init(context, params);
-        return kernel_state;
-      },
+  static TfLiteRegistration nnapi_delegate_kernel;
 
-      .free = [](TfLiteContext* context, void* buffer) -> void {
-        delete reinterpret_cast<NNAPIDelegateKernel*>(buffer);
-      },
+    nnapi_delegate_kernel.init = [](TfLiteContext* context, const char* buffer,
+                size_t length) -> void* {
+    const TfLiteDelegateParams* params =
+        reinterpret_cast<const TfLiteDelegateParams*>(buffer);
+    NNAPIDelegateKernel* kernel_state = new NNAPIDelegateKernel;
+    kernel_state->Init(context, params);
+    return kernel_state;
+    };
 
-      .prepare = [](TfLiteContext* context, TfLiteNode* node) -> TfLiteStatus {
-        // Since the underlying resize happened ahead of delegation
-        // worked. This does nothing.
-        return kTfLiteOk;
-      },
+    nnapi_delegate_kernel.free = [](TfLiteContext* context, void* buffer) -> void {
+    delete reinterpret_cast<NNAPIDelegateKernel*>(buffer);
+    };
 
-      .invoke = [](TfLiteContext* context, TfLiteNode* node) -> TfLiteStatus {
-        NNAPIDelegateKernel* state =
-            reinterpret_cast<NNAPIDelegateKernel*>(node->user_data);
-        return state->Invoke(context, node);
-      },
+    nnapi_delegate_kernel.prepare = [](TfLiteContext* context, TfLiteNode* node) -> TfLiteStatus {
+    // Since the underlying resize happened ahead of delegation
+    // worked. This does nothing.
+    return kTfLiteOk;
+    };
 
-      .profiling_string = nullptr,
-      .builtin_code = kTfLiteBuiltinDelegate,
-      .custom_name = "TfLiteNnapiDelegate",
-      .version = 1,
-  };
+    nnapi_delegate_kernel.invoke = [](TfLiteContext* context, TfLiteNode* node) -> TfLiteStatus {
+    NNAPIDelegateKernel* state =
+        reinterpret_cast<NNAPIDelegateKernel*>(node->user_data);
+    return state->Invoke(context, node);
+    };
+
+    nnapi_delegate_kernel.profiling_string = nullptr;
+    nnapi_delegate_kernel.builtin_code = kTfLiteBuiltinDelegate;
+    nnapi_delegate_kernel.custom_name = "TfLiteNnapiDelegate";
+    nnapi_delegate_kernel.version = 1;
 
   // Request TFLite to partition the graph and make kernels
   // for each independent node sub set a new nnapi_delegate_kernel.

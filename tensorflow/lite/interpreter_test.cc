@@ -88,7 +88,7 @@ TEST(BasicInterpreter, TestAllocateTensorsResetVariableTensors) {
   int tensor_index;
   ASSERT_EQ(interpreter.AddTensors(1, &tensor_index), kTfLiteOk);
   constexpr int kTensorSize = 16;
-  TfLiteQuantizationParams quant;
+  TfLiteQuantizationParams quant{ 0.0, 0 };
   interpreter.SetTensorParametersReadWrite(tensor_index, kTfLiteFloat32, "",
                                            {kTensorSize}, quant, true);
   interpreter.SetVariables({tensor_index});
@@ -174,7 +174,7 @@ TEST(BasicInterpreter, CheckAllocate) {
     ASSERT_EQ(interpreter.AddTensors(2), kTfLiteOk);
     interpreter.SetInputs({0, 1});
     interpreter.SetOutputs({});
-    TfLiteQuantizationParams quant;
+    TfLiteQuantizationParams quant{ 0.0, 0 };
 
     interpreter.SetTensorParametersReadWrite(0, test.type, "", {3}, quant);
     interpreter.SetTensorParametersReadWrite(1, test.type, "", {4}, quant);
@@ -262,7 +262,7 @@ TEST(BasicInterpreter, CheckResize) {
     ASSERT_EQ(interpreter.AddTensors(2), kTfLiteOk);
     interpreter.SetInputs({0, 1});
     interpreter.SetOutputs({});
-    TfLiteQuantizationParams quant;
+    TfLiteQuantizationParams quant{ 0.0, 0 };
 
     ASSERT_EQ(
         interpreter.SetTensorParametersReadWrite(0, test.type, "", {3}, quant),
@@ -297,7 +297,7 @@ TEST(BasicInterpreter, CheckAlignment) {
     ASSERT_EQ(interpreter.AddTensors(4), kTfLiteOk);
 
     for (int i = 0; i < 4; i++) {
-      TfLiteQuantizationParams quant;
+      TfLiteQuantizationParams quant{ 0.0, 0 };
       interpreter.SetTensorParametersReadWrite(i, test.type, "", {2 * i + 1},
                                                quant);
     }
@@ -313,7 +313,7 @@ TEST(BasicInterpreter, CheckArenaAllocation) {
   Interpreter interpreter;
   ASSERT_EQ(interpreter.AddTensors(10), kTfLiteOk);
 
-  TfLiteQuantizationParams quant;
+  TfLiteQuantizationParams quant{ 0.0, 0 };
   TfLiteRegistration reg = {nullptr, nullptr, nullptr, nullptr};
 
   std::vector<int> sizes{2048, 4096, 1023, 2047, 1021,
@@ -522,7 +522,7 @@ TEST(BasicInterpreter, OneOpInterpreter) {
   ASSERT_EQ(interpreter.SetInputs({0}), kTfLiteOk);
   ASSERT_EQ(interpreter.SetOutputs({1}), kTfLiteOk);
 
-  TfLiteQuantizationParams quantized;
+  TfLiteQuantizationParams quantized{ 0.0, 0 };
   ASSERT_EQ(interpreter.SetTensorParametersReadWrite(0, kTfLiteFloat32, "in1",
                                                      {3}, quantized),
             kTfLiteOk);
@@ -603,7 +603,7 @@ TEST(BasicInterpreter, ThreeStepAllocate) {
   ASSERT_EQ(interpreter.SetInputs({0}), kTfLiteOk);
   ASSERT_EQ(interpreter.SetOutputs({4}), kTfLiteOk);
 
-  TfLiteQuantizationParams quantized;
+  TfLiteQuantizationParams quantized{ 0.0, 0 };
   char data[] = {1, 0, 0, 0, 12, 0, 0, 0, 15, 0, 0, 0, 'A', 'B', 'C'};
   // Read only string tensor.
   ASSERT_EQ(interpreter.SetTensorParametersReadOnly(0, kTfLiteString, "", {1},
@@ -684,7 +684,7 @@ TEST(BasicInterpreter, AllocateTwice) {
   ASSERT_EQ(interpreter.SetInputs({0}), kTfLiteOk);
   ASSERT_EQ(interpreter.SetOutputs({1}), kTfLiteOk);
 
-  TfLiteQuantizationParams quantized;
+  TfLiteQuantizationParams quantized{ 0.0, 0 };
   ASSERT_EQ(interpreter.SetTensorParametersReadWrite(0, kTfLiteFloat32, "", {3},
                                                      quantized),
             kTfLiteOk);
@@ -751,8 +751,11 @@ TEST(BasicInterpreter, TestUseNNAPI) {
 TEST(BasicInterpreter, TestUnsupportedDelegateFunctions) {
   Interpreter interpreter;
   ASSERT_EQ(interpreter.AddTensors(2), kTfLiteOk);
-  TfLiteRegistration registration = {
-      .init = nullptr, .free = nullptr, .prepare = nullptr, .invoke = nullptr};
+  TfLiteRegistration registration;
+  registration.init = nullptr;
+  registration.free = nullptr;
+  registration.prepare = nullptr;
+  registration.invoke = nullptr;
   // These functions are only supported inside Delegate's Prepare function.
   // The test verifies that these functions returns `kTfLiteError`, but not
   // `kTfLiteOk` or just crashes.
@@ -795,7 +798,7 @@ TEST(BasicInterpreter, DynamicTensorsResizeDescendants) {
   interpreter.AddTensors(4);
   interpreter.SetInputs({0, 1});
   interpreter.SetOutputs({3});
-  TfLiteQuantizationParams quant;
+  TfLiteQuantizationParams quant{ 0.0, 0 };
   interpreter.SetTensorParametersReadWrite(0, kTfLiteFloat32, "", {2, 2, 1, 1},
                                            quant);
   interpreter.SetTensorParametersReadWrite(1, kTfLiteInt32, "", {4, 2}, quant);
@@ -997,7 +1000,7 @@ class TestExecutionPlan : public ::testing::Test {
     ASSERT_EQ(interpreter_.AddTensors(4), kTfLiteOk);
     interpreter_.SetInputs({0, 1});
     interpreter_.SetOutputs({2, 3});
-    TfLiteQuantizationParams quantized;
+    TfLiteQuantizationParams quantized{ 0.0, 0 };
     for (int tensor_index = 0; tensor_index < 4; tensor_index++) {
       ASSERT_EQ(interpreter_.SetTensorParametersReadWrite(
                     tensor_index, kTfLiteFloat32, "", {3}, quantized),
@@ -1094,7 +1097,7 @@ class TestDelegate : public ::testing::Test {
     interpreter_->AddTensors(5);
     interpreter_->SetInputs({0, 1});
     interpreter_->SetOutputs({3, 4});
-    TfLiteQuantizationParams quant;
+    TfLiteQuantizationParams quant{ 0.0, 0 };
     interpreter_->SetTensorParametersReadWrite(0, kTfLiteFloat32, "", {3},
                                                quant);
     interpreter_->SetTensorParametersReadWrite(1, kTfLiteFloat32, "", {3},
@@ -1435,7 +1438,7 @@ class TestDelegateWithDynamicTensors : public ::testing::Test {
     interpreter_->AddTensors(2);
     interpreter_->SetInputs({0});
     interpreter_->SetOutputs({1});
-    TfLiteQuantizationParams quant;
+    TfLiteQuantizationParams quant{ 0.0, 0 };
     interpreter_->SetTensorParametersReadWrite(0, kTfLiteFloat32, "", {3},
                                                quant);
     interpreter_->SetTensorParametersReadWrite(1, kTfLiteFloat32, "", {3},
@@ -1655,7 +1658,7 @@ class CancellationTest : public ::testing::Test {
     ASSERT_EQ(interpreter_.AddTensors(num_tensors), kTfLiteOk);
     interpreter_.SetInputs({0});
     interpreter_.SetOutputs({2});
-    TfLiteQuantizationParams quantized;
+    TfLiteQuantizationParams quantized{ 0.0, 0 };
     for (int tensor_index = 0; tensor_index < num_tensors; tensor_index++) {
       ASSERT_EQ(interpreter_.SetTensorParametersReadWrite(
                     tensor_index, kTfLiteFloat32, "", {3}, quantized),

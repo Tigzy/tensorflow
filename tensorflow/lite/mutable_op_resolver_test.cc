@@ -27,12 +27,11 @@ TfLiteStatus DummyInvoke(TfLiteContext* context, TfLiteNode* node) {
 }
 
 TfLiteRegistration* GetDummyRegistration() {
-  static TfLiteRegistration registration = {
-      .init = nullptr,
-      .free = nullptr,
-      .prepare = nullptr,
-      .invoke = DummyInvoke,
-  };
+  static TfLiteRegistration registration;
+  registration.init = nullptr;
+  registration.free = nullptr;
+  registration.prepare = nullptr;
+  registration.invoke = DummyInvoke;
   return &registration;
 }
 
@@ -51,12 +50,11 @@ void* Dummy2Init(TfLiteContext* context, const char* buffer, size_t length) {
 void Dummy2free(TfLiteContext* context, void* buffer) {}
 
 TfLiteRegistration* GetDummy2Registration() {
-  static TfLiteRegistration registration = {
-      .init = Dummy2Init,
-      .free = Dummy2free,
-      .prepare = Dummy2Prepare,
-      .invoke = Dummy2Invoke,
-  };
+  static TfLiteRegistration registration;
+  registration.init = Dummy2Init;
+  registration.free = Dummy2free;
+  registration.prepare = Dummy2Prepare;
+  registration.invoke = Dummy2Invoke;
   return &registration;
 }
 
